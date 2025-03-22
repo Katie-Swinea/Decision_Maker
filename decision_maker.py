@@ -2,8 +2,20 @@ import json
 import os
 import random
 import textwrap
+from flask import Flask, request, render_template
 
 DECISION_FILE = 'decisions.json'
+
+app = Flask(__name__)
+
+@app.route('/')
+def home_page():
+	return render_template('index.html')
+
+@app.route('/run-script', methods=['POST'])
+def run_decision_maker():
+	decision = main()
+	return f"{decision}"
 
 def load_data():
 	if os.path.exists(DECISION_FILE):
@@ -207,4 +219,4 @@ def main():
 		problem = input("\n"+msg+" ")
 
 if __name__ == "__main__":
-	main()
+	app.run(debug=True)
