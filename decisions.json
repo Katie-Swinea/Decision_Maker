@@ -1,0 +1,70 @@
+{
+    "Where to eat": [
+        {
+            "solutions": "Waffle House",
+            "ranking": 2,
+            "mood": [
+                "cheap"
+            ],
+            "history": 3
+        },
+        {
+            "solutions": "Roadhouse",
+            "ranking": 1,
+            "mood": [
+                "rolls"
+            ],
+            "history": 8
+        },
+        {
+            "solutions": "Cookout",
+            "ranking": 2,
+            "mood": [
+                "fast",
+                "cheap"
+            ],
+            "history": 3
+        },
+        {
+            "solutions": "Taco Bell",
+            "ranking": 3,
+            "mood": [
+                "cheap",
+                "fast"
+            ],
+            "history": 0
+        }
+    ],
+    "What to watch": [
+        {
+            "solutions": "Movie",
+            "ranking": null,
+            "mood": [],
+            "history": 5
+        },
+        {
+            "solutions": "Show",
+            "ranking": null,
+            "mood": [],
+            "history": 0
+        },
+        {
+            "solutions": "Anime",
+            "ranking": null,
+            "mood": [],
+            "history": 0
+        },
+        {
+            "solutions": "Action",
+            "ranking": null,
+            "mood": [],
+            "history": 0
+        },
+        {
+            "solutions": "Comedy",
+            "ranking": null,
+            "mood": [],
+            "history": 0
+        }
+    ]
+}

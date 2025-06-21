@@ -1,147 +1,218 @@
 import os
 import json
 import random
-import textwrap
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, ttk
 
-# Constants
+# One file to hold all the problem and solution information
 DECISION_FILE = "decisions.json"
-PREFERENCE_FILE = "preferences.json"
-HISTORY_FILE = "history.json"
 
-# Load or initialize JSON data safely
+# Variable to remember the last mood entered this session
+last_entered_mood = ""
+
+
 def load_json_file(filepath):
     try:
         if os.path.exists(filepath):
             with open(filepath, 'r') as f:
                 return json.load(f)
     except (json.JSONDecodeError, FileNotFoundError):
-        messagebox.showwarning("Warning", f"{filepath} is corrupted or missing. Resetting file.")
+        messagebox.showwarning("Warning", "{} is corrupted or missing. A new file will be created.".format(filepath))
     return {}
+
 
 def save_json_file(data, filepath):
     try:
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=4)
     except (OSError, PermissionError) as e:
-        messagebox.showerror("Error", f"Failed to save to {filepath}: {e}")
+        messagebox.showerror("Error", "Failed to save to {}: {}".format(filepath, e))
 
-# Load data files
-decisions = load_json_file(DECISION_FILE)
-preferences = load_json_file(PREFERENCE_FILE)
-history = load_json_file(HISTORY_FILE)
 
-# GUI setup
+decisions = load_json_file(DECISION_FILE) # Load information if it exists
+
+# UI setup
 root = tk.Tk()
 root.title("Decision Helper")
 root.geometry("600x400")
 
-output_text = tk.Text(root, wrap=tk.WORD, height=15)
-output_text.pack(pady=10)
+main_frame = tk.Frame(root, padx=10, pady=10)
+main_frame.pack(fill=tk.BOTH, expand=True)
 
-# Functions
+output_text = tk.Text(main_frame, wrap=tk.WORD, height=10)
+output_text.pack(pady=10, fill=tk.X)
 
-def ask_preferences():
-    options = ["default", "ranking", "mood", "history"]
-    choice = simpledialog.askstring("Preferences", f"Choose preference: {', '.join(options)}")
-    if choice in options:
-        preferences["mode"] = choice
-        if choice == "mood":
-            moods = simpledialog.askstring("Moods", "Enter a list of moods separated by commas:")
-            preferences["moods"] = [m.strip() for m in moods.split(',')] if moods else []
-        save_json_file(preferences, PREFERENCE_FILE)
-    else:
-        messagebox.showerror("Invalid", "Invalid preference selected.")
-        ask_preferences()
+problem_var = tk.StringVar()
+solution_var = tk.StringVar()
+preference_var = tk.StringVar()
 
-def choose_solution(problem):
-    pref = preferences.get("mode", "default")
-    solutions = decisions.get(problem, [])
+problem_label = tk.Label(main_frame, text="Select or enter a problem:")
+problem_label.pack()
+problem_combo = ttk.Combobox(main_frame, textvariable=problem_var, values=list(decisions.keys()))
+problem_combo.pack(fill=tk.X)
+
+add_problem_button = tk.Button(main_frame, text="Add Problem", command=lambda: add_problem(problem_var.get()))
+add_problem_button.pack(pady=5)
+
+solution_label = tk.Label(main_frame, text="Enter a solution:")
+solution_label.pack()
+solution_entry = tk.Entry(main_frame, textvariable=solution_var)
+solution_entry.pack(fill=tk.X)
+
+add_solution_button = tk.Button(main_frame, text="Add Solution",
+                                command=lambda: add_solution(problem_var.get(), solution_var.get()))
+add_solution_button.pack(pady=5)
+
+choose_frame = tk.Frame(main_frame, pady=10)
+choose_frame.pack()
+
+preference_label = tk.Label(choose_frame, text="Choose preference:")
+preference_label.grid(row=0, column=0, padx=5)
+preference_dropdown = ttk.Combobox(choose_frame, textvariable=preference_var, state="readonly")
+preference_dropdown['values'] = ("default", "ranking", "mood", "history")
+preference_dropdown.current(0)
+preference_dropdown.grid(row=0, column=1, padx=5)
+
+choose_button = tk.Button(choose_frame, text="Choose Solution", command=lambda: get_solution(problem_var.get()))
+choose_button.grid(row=0, column=2, padx=5)
+
+
+def add_problem(problem):
+    # Makes sure the user enters a problem
+    if not problem:
+        messagebox.showwarning("Missing Input", "Problem cannot be empty.", parent=root)
+        return
+    # Adds problem to file if doesn't exist
+    if problem not in decisions:
+        decisions[problem] = []
+        save_json_file(decisions, DECISION_FILE)
+        problem_combo['values'] = list(decisions.keys())
+        problem_combo.set(problem)
+        output_text.insert(tk.END, "Added new problem: {}\n".format(problem))
+
+
+def add_solution(problem, solution):
+    # Makes sure problem has a solution
+    if not solution:
+        messagebox.showwarning("Missing Input", "Solution cannot be empty.", parent=root)
+        return
+    # Makes sure a problem has been selected
+    if not problem:
+        messagebox.showerror("Error", "Please select or add a problem first.", parent=root)
+        return
+    # Adds solution so long as it doesn't exist
+    for sol in decisions.get(problem, []):
+        if isinstance(sol, dict) and sol.get("solutions") == solution:
+            messagebox.showinfo("Info", "Solution already exists.", parent=root)
+            return
+        elif isinstance(sol, str) and sol == solution:
+            messagebox.showinfo("Info", "Solution already exists.", parent=root)
+            return
+
+    entry = {"solutions": solution, "ranking": None, "mood": [], "history": 0} # Fills out json information
+    decisions[problem].append(entry)
+    save_json_file(decisions, DECISION_FILE)
+    output_text.insert(tk.END, "Added solution: {}\n".format(solution))
+    solution_var.set("")
+
+
+def get_solution(problem):
+    # This global statement allows us to modify the last_entered_mood variable
+    global last_entered_mood # Used for convience so the same mood can be used when retrying decision
+
+    if not problem:
+        messagebox.showerror("Error", "No problem selected.", parent=root)
+        return
+
+    all_solutions_raw = decisions.get(problem, [])
+    solutions = [s for s in all_solutions_raw if isinstance(s, dict)]
 
     if not solutions:
-        messagebox.showinfo("No Solutions", "No solutions found for this problem.")
-        return None
+        messagebox.showinfo("Info", "This problem has no valid solutions to choose from.", parent=root)
+        return
 
+    pref = preference_var.get()
+    # Additions to solutions like the rank and mood fields
+    made_changes = False
+    for sol in solutions:
+        if pref == "ranking" and sol.get("ranking") is None:
+            rank = simpledialog.askinteger("Input Required", "Enter rank for solution:\n'{}'".format(sol['solutions']),
+                                           parent=root, minvalue=1)
+            sol["ranking"] = rank
+            made_changes = True
+        elif pref == "mood" and not sol.get("mood"):
+            mood_input = simpledialog.askstring("Input Required",
+                                                "Enter moods (comma-separated) for:\n'{}'".format(sol['solutions']),
+                                                parent=root)
+            if mood_input is not None:
+                sol["mood"] = [m.strip().lower() for m in mood_input.split(',') if m.strip()]
+                made_changes = True
+
+    if made_changes:
+        save_json_file(decisions, DECISION_FILE)
+
+    # Rejected decision and if changes are made logic
+    selected = None
     if pref == "ranking":
-        try:
-            ranked = [s for s in solutions if isinstance(s.get("ranking"), int)]
-            if not ranked:
-                raise ValueError("No ranked solutions")
+        ranked = [s for s in solutions if isinstance(s.get("ranking"), int)]
+        if ranked:
             min_rank = min(s["ranking"] for s in ranked)
             best = [s for s in ranked if s["ranking"] == min_rank]
-            return random.choice(best)
-        except Exception as e:
-            messagebox.showwarning("Ranking Error", f"{e}")
+            selected = random.choice(best)
 
     elif pref == "mood":
-        mood = simpledialog.askstring("Mood", "What is your current mood?")
-        if mood:
-            mood_solutions = [s for s in solutions if mood in s.get("mood", [])]
-            if mood_solutions:
-                return random.choice(mood_solutions)
+        all_possible_moods = set()
+        for s in solutions:
+            all_possible_moods.update(s.get("mood", []))
+
+        if not all_possible_moods:
+            messagebox.showinfo("Info",
+                                "No solutions have moods. Please add moods via the dialogs or choose another preference.",
+                                parent=root)
+            return
+
+        # The dialog now uses `initialvalue` to pre-fill the entry
+        mood_input = simpledialog.askstring("Current Mood", "What is your current mood?",
+                                            initialvalue=last_entered_mood,
+                                            parent=root)
+        if not mood_input:
+            return
+
+        current_mood = mood_input.strip().lower()
+        # Remember this mood for the next time
+        last_entered_mood = current_mood
+
+        if current_mood not in all_possible_moods:
+            messagebox.showwarning("Invalid Mood",
+                                   "The mood '{}' is not associated with any solutions for this problem.".format(
+                                       current_mood), parent=root)
+            return
+
+        mood_matches = [s for s in solutions if current_mood in s.get("mood", [])]
+        selected = random.choice(mood_matches)
 
     elif pref == "history":
         hist_matches = [s for s in solutions if s.get("history", 0) > 0]
         if hist_matches:
-            max_score = max(s["history"] for s in hist_matches)
-            return random.choice([s for s in hist_matches if s["history"] == max_score])
-        else:
-            messagebox.showinfo("History", "Not enough history data yet.")
+            max_hist = max(s["history"] for s in hist_matches)
+            selected = random.choice([s for s in hist_matches if s["history"] == max_hist])
 
-    return random.choice(solutions)
+    if not selected:
+        if not solutions:
+            messagebox.showinfo("Info", "No valid solutions to choose from.", parent=root)
+            return
+        selected = random.choice(solutions)
 
-def submit_problem():
-    problem = simpledialog.askstring("Problem", "Enter a problem:")
-    if not problem:
-        return
-    if problem not in decisions:
-        decisions[problem] = []
+    result = selected["solutions"]
+    output_text.insert(tk.END, "\nSuggested solution for '{}': {}\n".format(problem, result))
+
+    response = messagebox.askquestion("Decision", "Do you accept this solution?\n{}".format(result), parent=root)
+    if response == "yes":
+        selected["history"] = selected.get("history", 0) + 1
         save_json_file(decisions, DECISION_FILE)
+        output_text.insert(tk.END, "Decision accepted and history saved.\n")
+    else:
+        output_text.insert(tk.END, "Decision rejected. Feel free to try again.\n")
 
-    pref = preferences.get("mode")
-    if not pref:
-        ask_preferences()
-
-    while True:
-        solution = simpledialog.askstring("Solution", "Enter a solution (or type 'stop' to finish):")
-        if not solution or solution.lower() == 'stop':
-            break
-
-        exists = any(sol["solutions"] == solution for sol in decisions[problem])
-        if not exists:
-            entry = {
-                "solutions": solution,
-                "ranking": None,
-                "mood": [],
-                "history": 0
-            }
-            if pref == "ranking":
-                try:
-                    entry["ranking"] = int(simpledialog.askstring("Rank", "Enter a ranking (lower is better):"))
-                except ValueError:
-                    entry["ranking"] = None
-            elif pref == "mood":
-                entry["mood"] = [m.strip() for m in simpledialog.askstring("Moods", "Tag moods (comma-separated):").split(',')]
-            decisions[problem].append(entry)
-            save_json_file(decisions, DECISION_FILE)
-
-    chosen = choose_solution(problem)
-    if chosen:
-        output_text.insert(tk.END, f"\nSuggested solution for '{problem}': {chosen['solutions']}\n")
-        action = messagebox.askquestion("Confirm", "Do you accept this solution?")
-        if action == 'yes':
-            if preferences.get("mode") == "history":
-                chosen["history"] += 1
-                save_json_file(decisions, DECISION_FILE)
-        else:
-            retry = messagebox.askyesno("Retry", "Would you like to change preferences and try again?")
-            if retry:
-                ask_preferences()
-                submit_problem()
-
-# Buttons
-tk.Button(root, text="Add Problem & Get Solution", command=submit_problem).pack()
-tk.Button(root, text="Exit", command=root.quit).pack(pady=5)
 
 root.mainloop()
