@@ -23,13 +23,37 @@
                 "fast",
                 "cheap"
             ],
-            "history": 3
+            "history": 4
         },
         {
             "solutions": "Taco Bell",
             "ranking": 3,
             "mood": [
                 "cheap",
+                "fast"
+            ],
+            "history": 2
+        },
+        {
+            "solutions": "Pizza Hut",
+            "ranking": null,
+            "mood": [
+                "cheap"
+            ],
+            "history": 0
+        },
+        {
+            "solutions": "BDUBs",
+            "ranking": null,
+            "mood": [
+                "time"
+            ],
+            "history": 0
+        },
+        {
+            "solutions": "Chik fil a",
+            "ranking": null,
+            "mood": [
                 "fast"
             ],
             "history": 0
@@ -39,31 +63,44 @@
         {
             "solutions": "Movie",
             "ranking": null,
-            "mood": [],
-            "history": 5
+            "mood": [
+                "long"
+            ],
+            "history": 7
         },
         {
             "solutions": "Show",
             "ranking": null,
-            "mood": [],
+            "mood": [
+                "short",
+                "long term"
+            ],
             "history": 0
         },
         {
             "solutions": "Anime",
             "ranking": null,
-            "mood": [],
-            "history": 0
+            "mood": [
+                "short",
+                "long term",
+                "focus"
+            ],
+            "history": 1
         },
         {
             "solutions": "Action",
             "ranking": null,
-            "mood": [],
+            "mood": [
+                "fun"
+            ],
             "history": 0
         },
         {
             "solutions": "Comedy",
             "ranking": null,
-            "mood": [],
+            "mood": [
+                "happy"
+            ],
             "history": 0
         }
     ]
