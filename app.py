@@ -2,12 +2,12 @@ import os
 import json
 import random
 import customtkinter as ctk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox
 
-# One file to hold all the problem and solution information
+# --- Constants ---
 DECISION_FILE = "decisions.json"
 
-# Configs for pretty UI
+# --- UI Style Configuration ---
 STYLE = {
     "colors": {
         "base": "#002b36",
@@ -35,26 +35,95 @@ STYLE = {
 }
 
 
+# --- Custom, Styled Dialog Window ---
+class CustomDialog(ctk.CTkToplevel):
+    """
+    A custom, modern dialog box that matches the application's theme.
+    """
+
+    def __init__(self, parent, title, prompt, initial_value="", numeric=False):
+        super().__init__(parent)
+        self.title(title)
+        self.geometry("400x200")
+        self.configure(fg_color=STYLE["colors"]["base"])
+        self.protocol("WM_DELETE_WINDOW", self._on_closing)  # Handle closing with 'X'
+
+        self._prompt = prompt
+        self._numeric = numeric
+        self._result = None
+        self._initial_value = initial_value
+
+        self._create_widgets()
+
+        # Make the dialog modal
+        self.transient(parent)
+        self.grab_set()
+        self.wait_window()
+
+    def _create_widgets(self):
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+
+        prompt_label = ctk.CTkLabel(self, text=self._prompt, font=STYLE["fonts"]["body"],
+                                    text_color=STYLE["colors"]["text_highlight"], wraplength=380)
+        prompt_label.grid(row=0, column=0, columnspan=2, padx=20, pady=20, sticky="ew")
+
+        self.entry = ctk.CTkEntry(self, font=STYLE["fonts"]["body"], fg_color=STYLE["colors"]["frame"],
+                                  border_color=STYLE["colors"]["purple"], text_color=STYLE["colors"]["text_highlight"])
+        self.entry.grid(row=1, column=0, columnspan=2, padx=20, sticky="ew")
+        self.entry.insert(0, self._initial_value)
+
+        button_frame = ctk.CTkFrame(self, fg_color="transparent")
+        button_frame.grid(row=2, column=0, columnspan=2, pady=20)
+
+        ok_button = ctk.CTkButton(button_frame, text="OK", command=self._on_ok, font=STYLE["fonts"]["button"],
+                                  fg_color=STYLE["colors"]["cyan"], text_color=STYLE["colors"]["base"])
+        ok_button.pack(side="left", padx=10)
+
+        cancel_button = ctk.CTkButton(button_frame, text="Cancel", command=self._on_closing,
+                                      font=STYLE["fonts"]["button"])
+        cancel_button.pack(side="left", padx=10)
+
+        self.entry.focus_set()
+        self.entry.bind("<Return>", self._on_ok)
+
+    def _on_ok(self, event=None):
+        value = self.entry.get()
+        if self._numeric:
+            try:
+                self._result = int(value)
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid number.", parent=self)
+                return
+        else:
+            self._result = value
+
+        self.grab_release()
+        self.destroy()
+
+    def _on_closing(self):
+        self._result = None
+        self.grab_release()
+        self.destroy()
+
+    def get_input(self):
+        return self._result
+
+
+# --- Main Application ---
 class DecisionApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.decisions = self.load_json_file(DECISION_FILE)
         self.last_entered_mood = ""
-
-        # Outputs for widgets (which look so much better now)
         self.problem_var = ctk.StringVar()
         self.solution_var = ctk.StringVar()
         self.preference_var = ctk.StringVar(value="default (random)")
-
-        # Update displayed solutions list
         self.problem_var.trace_add("write", self.update_solutions_list)
-
-        # Intial text
         self.stat_solution_count = ctk.StringVar(value="--")
         self.stat_most_chosen = ctk.StringVar(value="--")
         self.stat_least_chosen = ctk.StringVar(value="--")
 
-        # UI setup
         self.title(f"{STYLE['icons']['action']} Decision Engine {STYLE['icons']['action']}")
         self.geometry("950x650")
         self.configure(fg_color=STYLE["colors"]["base"])
@@ -68,12 +137,11 @@ class DecisionApp(ctk.CTk):
     def create_widgets(self):
         colors, fonts, icons = STYLE["colors"], STYLE["fonts"], STYLE["icons"]
 
-        # Left column
+        # Left Column
         left_frame = ctk.CTkFrame(self, fg_color="transparent")
         left_frame.grid(row=0, column=0, padx=(20, 10), pady=20, sticky="nsew")
         left_frame.grid_rowconfigure(2, weight=1)
 
-        # Problem box
         problem_frame = ctk.CTkFrame(left_frame, fg_color=colors["frame"], border_color=colors["purple"],
                                      border_width=2)
         problem_frame.grid(row=0, column=0, sticky="ew")
@@ -95,7 +163,6 @@ class DecisionApp(ctk.CTk):
                                            command=lambda: self.add_problem(self.problem_var.get()))
         add_problem_button.grid(row=2, column=0, padx=15, pady=(5, 15), sticky="ew")
 
-        # Add Solution box
         add_solution_frame = ctk.CTkFrame(left_frame, fg_color=colors["frame"], border_color=colors["purple"],
                                           border_width=2)
         add_solution_frame.grid(row=1, column=0, sticky="ew", pady=(20, 0))
@@ -114,7 +181,6 @@ class DecisionApp(ctk.CTk):
                                                                               self.solution_var.get()))
         add_solution_button.grid(row=2, column=0, padx=15, pady=(5, 15), sticky="ew")
 
-        # Solutions display box
         existing_solutions_frame = ctk.CTkFrame(left_frame, fg_color=colors["frame"], border_color=colors["purple"],
                                                 border_width=2)
         existing_solutions_frame.grid(row=2, column=0, sticky="nsew", pady=(20, 0))
@@ -126,7 +192,7 @@ class DecisionApp(ctk.CTk):
         self.solutions_list_frame = ctk.CTkScrollableFrame(existing_solutions_frame, fg_color=colors["base"])
         self.solutions_list_frame.grid(row=1, column=0, sticky="nsew", padx=15, pady=(0, 15))
 
-        # Right column
+        # Right Column
         right_frame = ctk.CTkFrame(self, fg_color="transparent")
         right_frame.grid(row=0, column=1, padx=(10, 20), pady=20, sticky="nsew")
         right_frame.grid_rowconfigure(2, weight=1)
@@ -171,7 +237,6 @@ class DecisionApp(ctk.CTk):
                                                                                                             anchor="w")
         ctk.CTkLabel(stats_frame, textvariable=self.stat_least_chosen, font=fonts["body"],
                      text_color=colors["text_highlight"]).pack(padx=15, pady=(0, 15), anchor="w")
-
         results_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         results_frame.grid(row=2, column=0, pady=(20, 0), sticky="nsew")
         results_frame.grid_columnconfigure(0, weight=1)
@@ -183,6 +248,10 @@ class DecisionApp(ctk.CTk):
                                           height=150,
                                           text_color=colors["text"], border_color=colors["purple"], border_width=2)
         self.output_text.grid(row=1, column=0, pady=(5, 0), sticky="nsew")
+
+    def show_custom_dialog(self, title, prompt, numeric=False, initial_value=""):
+        dialog = CustomDialog(parent=self, title=title, prompt=prompt, numeric=numeric, initial_value=initial_value)
+        return dialog.get_input()
 
     def update_solutions_list(self, *args):
         problem = self.problem_var.get()
@@ -203,14 +272,12 @@ class DecisionApp(ctk.CTk):
     def update_stats(self, event=None):
         problem = self.problem_var.get()
         if not problem or problem not in self.decisions:
-            # Init
             self.stat_solution_count.set("--")
             self.stat_most_chosen.set("Select a problem")
             self.stat_least_chosen.set("to see stats.")
             return
         solutions = [s for s in self.decisions.get(problem, []) if isinstance(s, dict)]
         self.stat_solution_count.set(str(len(solutions)))
-        # For new problems
         if not solutions:
             self.stat_most_chosen.set("No solutions yet.")
             self.stat_least_chosen.set("")
@@ -225,7 +292,6 @@ class DecisionApp(ctk.CTk):
         self.stat_most_chosen.set(f"{most_chosen['solutions']} ({most_chosen['history']} times)")
         self.stat_least_chosen.set(f"{least_chosen['solutions']} ({least_chosen['history']} times)")
 
-    # For clean output since the log is now results of a single decision process
     def clear_log_box(self):
         if self.output_text and self.output_text.winfo_exists():
             self.output_text.delete("1.0", ctk.END)
@@ -246,8 +312,9 @@ class DecisionApp(ctk.CTk):
             messagebox.showerror("Error", f"Failed to save to {filepath}: {e}")
 
     def add_problem(self, problem):
-        # User validation
-        if not problem: messagebox.showwarning("Missing Input", "Problem cannot be empty.", parent=self); return
+        if not problem:
+            messagebox.showwarning("Missing Input", "Problem cannot be empty.", parent=self)
+            return
         if problem not in self.decisions:
             self.decisions[problem] = []
             self.save_json_file(self.decisions, DECISION_FILE)
@@ -258,14 +325,16 @@ class DecisionApp(ctk.CTk):
             self.update_solutions_list()
 
     def add_solution(self, problem, solution):
-        # User validation
-        if not solution: messagebox.showwarning("Missing Input", "Solution cannot be empty.", parent=self); return
-        if not problem: messagebox.showerror("Error", "Please select or add a problem first.", parent=self); return
-        # No duplicates
+        if not solution:
+            messagebox.showwarning("Missing Input", "Solution cannot be empty.", parent=self)
+            return
+        if not problem:
+            messagebox.showerror("Error", "Please select or add a problem first.", parent=self)
+            return
         for sol in self.decisions.get(problem, []):
             if (isinstance(sol, dict) and sol.get("solutions") == solution) or (
                     isinstance(sol, str) and sol == solution):
-                messagebox.showinfo("Info", "Solution already exists.", parent=self);
+                messagebox.showinfo("Info", "Solution already exists.", parent=self)
                 return
         entry = {"solutions": solution, "ranking": None, "mood": [], "history": 0}
         self.decisions[problem].append(entry)
@@ -276,8 +345,9 @@ class DecisionApp(ctk.CTk):
         self.update_solutions_list()
 
     def get_solution(self, problem):
-        # User validation
-        if not problem: messagebox.showerror("Error", "No problem selected.", parent=self); return
+        if not problem:
+            messagebox.showerror("Error", "No problem selected.", parent=self)
+            return
 
         pref = self.preference_var.get()
         if pref == "default (random)":
@@ -285,52 +355,58 @@ class DecisionApp(ctk.CTk):
 
         all_solutions_raw = self.decisions.get(problem, [])
         solutions = [s for s in all_solutions_raw if isinstance(s, dict)]
-        # Ensures decision can be made
-        if not solutions: messagebox.showinfo("Info", "This problem has no valid solutions to choose from.",
-                                              parent=self); return
+        if not solutions:
+            messagebox.showinfo("Info", "This problem has no valid solutions to choose from.", parent=self)
+            return
         made_changes = False
-        # To ensure all information is filled out for a solution preference pairing
         for sol in solutions:
             if pref == "ranking" and sol.get("ranking") is None:
-                rank = simpledialog.askinteger("Input Required", f"Enter rank for solution:\n'{sol['solutions']}'",
-                                               parent=self, minvalue=1)
-                if rank is not None: sol["ranking"], made_changes = rank, True
+                rank = self.show_custom_dialog(title="Input Required",
+                                               prompt=f"Enter rank for solution:\n'{sol['solutions']}'", numeric=True)
+                if rank is not None:
+                    sol["ranking"], made_changes = rank, True
             elif pref == "mood" and not sol.get("mood"):
-                mood_input = simpledialog.askstring("Input Required",
-                                                    f"Enter moods (comma-separated) for:\n'{sol['solutions']}'",
-                                                    parent=self)
-                if mood_input is not None: sol["mood"], made_changes = [m.strip().lower() for m in mood_input.split(',')
-                                                                        if m.strip()], True
+                mood_input = self.show_custom_dialog(title="Input Required",
+                                                     prompt=f"Enter moods (comma-separated) for:\n'{sol['solutions']}'")
+                if mood_input is not None:
+                    sol["mood"], made_changes = [m.strip().lower() for m in mood_input.split(',') if m.strip()], True
 
-        if made_changes: self.save_json_file(self.decisions, DECISION_FILE) # Updates solutions
+        if made_changes:
+            self.save_json_file(self.decisions, DECISION_FILE)
 
         selected = None
         if pref == "ranking":
             ranked = [s for s in solutions if isinstance(s.get("ranking"), int)]
-            if ranked: min_rank = min(s["ranking"] for s in ranked); selected = random.choice(
-                [s for s in ranked if s["ranking"] == min_rank])
+            if ranked:
+                min_rank = min(s["ranking"] for s in ranked)
+                selected = random.choice([s for s in ranked if s["ranking"] == min_rank])
         elif pref == "mood":
             all_possible_moods = {m for s in solutions for m in s.get("mood", [])}
-            if not all_possible_moods: messagebox.showinfo("Info",
-                                                           "No solutions have moods. Please add moods or choose another preference.",
-                                                           parent=self); return
-            mood_input = simpledialog.askstring("Current Mood", "What is your current mood?", parent=self,
-                                                initialvalue=self.last_entered_mood)
-            if not mood_input: return
+            if not all_possible_moods:
+                messagebox.showinfo("Info", "No solutions have moods. Please add moods or choose another preference.",
+                                    parent=self)
+                return
+            mood_input = self.show_custom_dialog(title="Current Mood", prompt="What is your current mood?",
+                                                 initial_value=self.last_entered_mood)
+            if mood_input is None: return
             self.last_entered_mood = mood_input.strip().lower()
             mood_matches = [s for s in solutions if self.last_entered_mood in s.get("mood", [])]
-            if not mood_matches: messagebox.showwarning("Invalid Mood",
-                                                        f"The mood '{self.last_entered_mood}' is not associated with any solutions.",
-                                                        parent=self); return
+            if not mood_matches:
+                messagebox.showwarning("Invalid Mood",
+                                       f"The mood '{self.last_entered_mood}' is not associated with any solutions.",
+                                       parent=self)
+                return
             selected = random.choice(mood_matches)
         elif pref == "history":
             hist_matches = [s for s in solutions if s.get("history", 0) > 0]
-            if hist_matches: min_hist = min(s["history"] for s in hist_matches); selected = random.choice(
-                [s for s in hist_matches if s["history"] == min_hist])
+            if hist_matches:
+                min_hist = min(s["history"] for s in hist_matches)
+                selected = random.choice([s for s in hist_matches if s["history"] == min_hist])
 
-        # User validation
         if not selected:
-            if not solutions: messagebox.showinfo("Info", "No valid solutions to choose from.", parent=self); return
+            if not solutions:
+                messagebox.showinfo("Info", "No valid solutions to choose from.", parent=self)
+                return
             selected = random.choice(solutions)
 
         result = selected["solutions"]
@@ -338,7 +414,7 @@ class DecisionApp(ctk.CTk):
                                 f"\n{STYLE['icons']['choose']} Suggested solution for '{problem}':\n--- {result} ---\n")
         response = messagebox.askquestion("Decision", f"Do you accept this solution?\n\n{result}", parent=self)
         if response == "yes":
-            selected["history"] = selected.get("history", 0) + 1 # Update history
+            selected["history"] = selected.get("history", 0) + 1
             self.save_json_file(self.decisions, DECISION_FILE)
             self.output_text.insert("end", "Decision accepted and history updated.\n")
             self.after(3000, self.clear_log_box)

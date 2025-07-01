@@ -56,13 +56,13 @@
             "mood": [
                 "fast"
             ],
-            "history": 0
+            "history": 1
         }
     ],
     "What to watch": [
         {
             "solutions": "Movie",
-            "ranking": null,
+            "ranking": 3,
             "mood": [
                 "long"
             ],
@@ -70,7 +70,7 @@
         },
         {
             "solutions": "Show",
-            "ranking": null,
+            "ranking": 2,
             "mood": [
                 "short",
                 "long term"
@@ -79,7 +79,7 @@
         },
         {
             "solutions": "Anime",
-            "ranking": null,
+            "ranking": 2,
             "mood": [
                 "short",
                 "long term",
@@ -89,7 +89,7 @@
         },
         {
             "solutions": "Action",
-            "ranking": null,
+            "ranking": 1,
             "mood": [
                 "fun"
             ],
@@ -97,11 +97,20 @@
         },
         {
             "solutions": "Comedy",
-            "ranking": null,
+            "ranking": 1,
             "mood": [
                 "happy"
             ],
-            "history": 0
+            "history": 1
+        },
+        {
+            "solutions": "Leverage",
+            "ranking": 1,
+            "mood": [
+                "fun",
+                "nostalagia"
+            ],
+            "history": 1
         }
     ]
 }
