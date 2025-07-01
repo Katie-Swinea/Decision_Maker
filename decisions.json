@@ -6,7 +6,7 @@
             "mood": [
                 "cheap"
             ],
-            "history": 3
+            "history": 11
         },
         {
             "solutions": "Roadhouse",
@@ -14,7 +14,7 @@
             "mood": [
                 "rolls"
             ],
-            "history": 8
+            "history": 11
         },
         {
             "solutions": "Cookout",
@@ -23,7 +23,7 @@
                 "fast",
                 "cheap"
             ],
-            "history": 4
+            "history": 10
         },
         {
             "solutions": "Taco Bell",
@@ -32,11 +32,11 @@
                 "cheap",
                 "fast"
             ],
-            "history": 2
+            "history": 9
         },
         {
             "solutions": "Pizza Hut",
-            "ranking": null,
+            "ranking": 4,
             "mood": [
                 "cheap"
             ],
@@ -44,7 +44,7 @@
         },
         {
             "solutions": "BDUBs",
-            "ranking": null,
+            "ranking": 2,
             "mood": [
                 "time"
             ],
@@ -52,11 +52,19 @@
         },
         {
             "solutions": "Chik fil a",
-            "ranking": null,
+            "ranking": 2,
             "mood": [
                 "fast"
             ],
-            "history": 1
+            "history": 9
+        },
+        {
+            "solutions": "Panera",
+            "ranking": 3,
+            "mood": [
+                "soup"
+            ],
+            "history": 0
         }
     ],
     "What to watch": [
@@ -93,7 +101,7 @@
             "mood": [
                 "fun"
             ],
-            "history": 0
+            "history": 2
         },
         {
             "solutions": "Comedy",
@@ -110,7 +118,7 @@
                 "fun",
                 "nostalagia"
             ],
-            "history": 1
+            "history": 2
         }
     ]
 }
