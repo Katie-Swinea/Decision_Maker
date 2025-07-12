@@ -6,7 +6,7 @@
             "mood": [
                 "cheap"
             ],
-            "history": 11
+            "history": 12
         },
         {
             "solutions": "Roadhouse",
@@ -23,7 +23,7 @@
                 "fast",
                 "cheap"
             ],
-            "history": 10
+            "history": 11
         },
         {
             "solutions": "Taco Bell",
@@ -33,14 +33,6 @@
                 "fast"
             ],
             "history": 9
-        },
-        {
-            "solutions": "Pizza Hut",
-            "ranking": 4,
-            "mood": [
-                "cheap"
-            ],
-            "history": 0
         },
         {
             "solutions": "BDUBs",
@@ -64,7 +56,7 @@
             "mood": [
                 "soup"
             ],
-            "history": 0
+            "history": 1
         }
     ],
     "What to watch": [
@@ -74,7 +66,7 @@
             "mood": [
                 "long"
             ],
-            "history": 7
+            "history": 8
         },
         {
             "solutions": "Show",
@@ -83,7 +75,7 @@
                 "short",
                 "long term"
             ],
-            "history": 0
+            "history": 1
         },
         {
             "solutions": "Anime",
@@ -109,7 +101,7 @@
             "mood": [
                 "happy"
             ],
-            "history": 1
+            "history": 2
         },
         {
             "solutions": "Leverage",
@@ -118,7 +110,7 @@
                 "fun",
                 "nostalagia"
             ],
-            "history": 2
+            "history": 3
         }
     ]
 }
